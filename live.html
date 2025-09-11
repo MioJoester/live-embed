@@ -64,7 +64,7 @@
         document.getElementById("art").src = data.item.album.images[0].url;
         document.getElementById("track").textContent = data.item.name;
         document.getElementById("artist").textContent = data.item.artists.map(a => a.name).join(", ");
-        document.getElementById("state").textContent = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
+        document.getElementById("state").textContent = data.is_playing ? "▶ Playing" : "⏸ Paused";
       }
     }
 
@@ -76,7 +76,7 @@
       getToken(code).then(tokens => {
         localStorage.setItem("access_token", tokens.access_token);
         fetchNowPlaying(tokens.access_token);
-        setInterval(() => fetchNowPlaying(tokens.access_token), 10000);
+        setInterval(() => fetchNowPlaying(tokens.access_token), 5000);
       });
     } else {
       document.getElementById("loading").textContent = "No code found. Go back and connect Spotify.";
