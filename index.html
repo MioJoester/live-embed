@@ -20,12 +20,43 @@
   </div>
 
   <script>
-    const clientId = "6dcb2a5ea17f4e078bebf78254a8236d"; // replace with your app client id
+    const clientId = "6dcb2a5ea17f4e078bebf78254a8236d"; // from Spotify dashboard
     const redirectUri = window.location.origin + "/live.html"; 
     const scopes = "user-read-currently-playing user-read-recently-played";
 
-    document.getElementById("getStarted").addEventListener("click", () => {
-      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+    async function generateCodeVerifier(length) {
+      let text = '';
+      let possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+      for (let i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+      }
+      return text;
+    }
+
+    async function sha256(plain) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(plain);
+      return await crypto.subtle.digest('SHA-256', data);
+    }
+
+    function base64urlencode(bytes) {
+      return btoa(String.fromCharCode(...new Uint8Array(bytes)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    async function generateCodeChallenge(verifier) {
+      const hashed = await sha256(verifier);
+      return base64urlencode(hashed);
+    }
+
+    document.getElementById("getStarted").addEventListener("click", async () => {
+      const verifier = await generateCodeVerifier(128);
+      const challenge = await generateCodeChallenge(verifier);
+
+      localStorage.setItem("code_verifier", verifier);
+
+      const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&code_challenge_method=S256&code_challenge=${challenge}`;
+
       window.location.href = authUrl;
     });
   </script>
