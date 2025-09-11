@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Redirecting to Spotify…</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body{background:#000}</style>
+</head>
+<body class="min-h-screen flex items-center justify-center text-white px-6">
+  
+  <div class="w-full max-w-xl bg-gray-900 rounded-2xl p-8 shadow-lg text-center">
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg"
+      alt="Spotify"
+      class="w-16 mx-auto mb-5"
+    />
+    <h1 class="text-2xl font-bold mb-2">Connecting to Spotify…</h1>
+    <p class="text-gray-400 mb-6">If you aren’t redirected, use the test link below.</p>
+
+    <div class="space-y-4">
+      <button id="go" class="px-6 py-3 bg-green-500 hover:bg-green-600 rounded-full font-semibold">
+        Continue to Spotify
+      </button>
+
+      <div class="text-left bg-gray-800 rounded-lg p-4">
+        <p class="text-sm text-gray-300 mb-2 font-medium">Auth URL (debug):</p>
+        <code id="authUrl" class="break-all text-xs block text-gray-400"></code>
+        <a id="authAnchor" href="#" class="inline-block mt-3 text-green-400 underline">Open Auth in a new tab</a>
+      </div>
+
+      <p id="err" class="text-red-400 text-sm hidden"></p>
+    </div>
+  </div>
+
+<script>
+  const clientId = "6dcb2a5ea17f4e078bebf78254a8236d";
+  const redirectUri = "https://live-embed.vercel.app/live.html";
+  const scopes = [
+    "user-read-currently-playing",
+    "user-read-playback-state",
+    "user-read-recently-played"
+  ];
+
+  async function generateCodeChallenge(codeVerifier) {
+    const data = new TextEncoder().encode(codeVerifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode(...new Uint8Array(digest)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function generateRandomString(length) {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return [...array].map(x => x.toString(36)[0]).join('');
+  }
+
+  document.getElementById("go").addEventListener("click", async () => {
+    const codeVerifier = generatlogineRandomString(128);
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+    const state = generateRandomString(16);
+
+    // Store verifier in localStorage for retrieval on live.html
+    localStorage.setItem("spotify_code_verifier", codeVerifier);
+
+    const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scopes.join(" "))}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
+
+    window.location.href = authUrl;
+  });
+</script>
+
+
+</body>
+</html>
