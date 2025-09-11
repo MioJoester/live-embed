@@ -25,37 +25,61 @@
   </div>
 
   <script>
-    // get ?code=... from URL
+    async function getToken(code) {
+      const verifier = localStorage.getItem("code_verifier");
+
+      const body = new URLSearchParams({
+        client_id: "6dcb2a5ea17f4e078bebf78254a8236d",
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: window.location.origin + "/live.html",
+        code_verifier: verifier
+      });
+
+      const res = await fetch("https://accounts.spotify.com/api/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body
+      });
+
+      return await res.json();
+    }
+
+    async function fetchNowPlaying(access_token) {
+      const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+        headers: { Authorization: "Bearer " + access_token }
+      });
+
+      if (res.status === 204) {
+        document.getElementById("loading").textContent = "Nothing is playing right now.";
+        return;
+      }
+
+      const data = await res.json();
+
+      if (data && data.item) {
+        document.getElementById("loading").classList.add("hidden");
+        document.getElementById("player").classList.remove("hidden");
+
+        document.getElementById("art").src = data.item.album.images[0].url;
+        document.getElementById("track").textContent = data.item.name;
+        document.getElementById("artist").textContent = data.item.artists.map(a => a.name).join(", ");
+        document.getElementById("state").textContent = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
+      }
+    }
+
+    // Get ?code=... from URL
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
-    if (!code) {
-      document.getElementById("loading").textContent = "No code found. Please go back and connect Spotify.";
+    if (code) {
+      getToken(code).then(tokens => {
+        localStorage.setItem("access_token", tokens.access_token);
+        fetchNowPlaying(tokens.access_token);
+        setInterval(() => fetchNowPlaying(tokens.access_token), 10000);
+      });
     } else {
-      // ⚠️ Normally you'd send "code" to your backend to exchange for tokens
-      // Example:
-      // fetch("/api/spotify/token", { method:"POST", body: JSON.stringify({ code }) })
-
-      // For demo, we'll just simulate fetch
-      async function fetchNowPlaying() {
-        const res = await fetch("/api/spotify/now-playing"); // your backend
-        const data = await res.json();
-
-        if (data && data.is_playing) {
-          document.getElementById("loading").classList.add("hidden");
-          document.getElementById("player").classList.remove("hidden");
-
-          document.getElementById("art").src = data.item.album.images[0].url;
-          document.getElementById("track").textContent = data.item.name;
-          document.getElementById("artist").textContent = data.item.artists.map(a => a.name).join(", ");
-          document.getElementById("state").textContent = data.is_playing ? "▶️ Playing" : "⏸️ Paused";
-        } else {
-          document.getElementById("loading").textContent = "Nothing is playing right now.";
-        }
-      }
-
-      fetchNowPlaying();
-      setInterval(fetchNowPlaying, 10000);
+      document.getElementById("loading").textContent = "No code found. Go back and connect Spotify.";
     }
   </script>
 </body>
