@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Live Activity</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Particles.js -->
+  <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+  <style>
+    body {
+      background-color: #000000;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+  <!-- Particles background -->
+  <div id="particles-js"></div>
+
+  <section class="text-center py-24 px-6 relative z-10">   
+    <!-- Spotify Logo -->
+    <img 
+      src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" 
+      alt="Spotify Logo" 
+      class="mx-auto w-16 md:w-24 mb-6"
+    />
+
+    <h3 class="text-3xl md:text-6xl font-bold mb-6 text-white">
+      Show your Spotify Activity on your Site!
+    </h3>
+
+    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+      Display your currently playing song on Spotify directly on your personal website with just a few clicks.
+    </p>
+
+    <div class="mt-10">
+      <a href="login.html" class="px-8 py-3 bg-green-500 text-white rounded-full text-lg font-semibold shadow-md hover:bg-green-600 transition">
+        Get Started
+      </a>
+    </div>
+  </section>
+
+  <script>
+    /* Particles.js Config */
+    particlesJS("particles-js", {
+      "particles": {
+        "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+        "color": { "value": "#1DB954" }, // Spotify green
+        "shape": { "type": "circle" },
+        "opacity": { "value": 0.5, "random": false },
+        "size": { "value": 3, "random": true },
+        "line_linked": { "enable": true, "distance": 150, "color": "#1DB954", "opacity": 0.4, "width": 1 },
+        "move": { "enable": true, "speed": 2, "direction": "none", "random": false, "straight": false, "out_mode": "out" }
+      },
+      "interactivity": {
+        "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" } },
+        "modes": { "repulse": { "distance": 100 }, "push": { "particles_nb": 4 } }
+      },
+      "retina_detect": true
+    });
+  </script>
+</body>
+</html>
