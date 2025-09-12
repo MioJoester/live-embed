@@ -79,7 +79,7 @@
     const redirectUri = "https://live-embed.vercel.app/live.html";
 
     async function getAccessToken(code) {
-      const codeVerifier = localStorage.getItem("spotify_code_verifier");
+      const codeVerifier = localStorage.getItem("code_verifier");
       if (!codeVerifier) throw new Error("Missing code_verifier in localStorage.");
 
       const body = new URLSearchParams({
