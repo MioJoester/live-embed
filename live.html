@@ -5,14 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Now Playing on Spotify</title>
   <script src="https://cdn.tailwindcss.com"></script>
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"> 
-
-  <style>body{background:#000}</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>body { background: #000 }</style>
 </head>
-<body class="min-h-screen flex items-center justify-center text-white px-6">
+<body class="min-h-screen flex flex-col items-center justify-center text-white px-6 py-12 space-y-10">
 
   <div id="card" class="bg-gray-900 rounded-2xl p-8 shadow-lg text-center max-w-md w-full">
-    <h1 class="text-xl font-bold mb-4"> 
+    <h1 class="text-xl font-bold mb-4">
       <i class="fab fa-spotify text-green-500 text-xl"></i> Now Playing on Spotify
     </h1>
 
@@ -24,7 +23,7 @@
       <p id="artist" class="text-gray-300"></p>
       <p id="state" class="text-sm text-gray-400 mt-2"></p>
 
-            <div class="w-full mt-4">
+      <div class="w-full mt-4">
         <div class="flex justify-between text-sm text-gray-400 mb-1">
           <span id="currentTime">0:00</span>
           <span id="totalTime">0:00</span>
@@ -32,13 +31,20 @@
         <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
           <div id="progressBar" class="bg-green-500 h-2 rounded-full transition-all duration-500 ease-linear" style="width: 0%"></div>
         </div>
-    </div>
+      </div>
 
-      <div class="flex items-center justify-center  w-full mt-4 ">
+      <div class="flex items-center justify-center w-full mt-4">
         <a href="https://github.com/MioJoester" class="mt-4 text-xl bg-transparent font-bold text-white rounded-md py-2 px-2">
           <i class="fab fa-github"></i>
         </a>
       </div>
+    </div>
+  </div>
+
+  <!-- Recently Played Section -->
+  <div id="recentSection" class="hidden bg-gray-900 rounded-2xl p-6 shadow-lg text-left max-w-md w-full">
+    <h2 class="text-lg font-semibold mb-4 text-center">Recently Played</h2>
+    <ul id="recentList" class="space-y-4"></ul>
   </div>
 
   <script>
@@ -63,44 +69,86 @@
     }
 
     function formatTime(ms) {
-  const minutes = Math.floor(ms / 60000);
-  const seconds = Math.floor((ms % 60000) / 1000);
-  return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-}
+      const minutes = Math.floor(ms / 60000);
+      const seconds = Math.floor((ms % 60000) / 1000);
+      return minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+    }
 
     async function fetchNowPlaying(access_token) {
       const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
         headers: { Authorization: "Bearer " + access_token }
       });
 
-      if (res.status === 204) {
-        document.getElementById("loading").textContent = "Nothing is playing right now.";
+      if (res.status === 204 || res.status === 202) {
+        // Nothing is playing
+        fetchRecentlyPlayed(access_token);
         return;
       }
 
       const data = await res.json();
 
       if (data && data.item) {
-        document.getElementById("loading").classList.add("hidden");
-        document.getElementById("player").classList.remove("hidden");
-
-        document.getElementById("art").src = data.item.album.images[0].url;
-        document.getElementById("track").textContent = data.item.name;
-        document.getElementById("artist").textContent = data.item.artists.map(a => a.name).join(", ");
-        document.getElementById("state").textContent = data.is_playing ? "▶ Playing" : "⏸ Paused";
-
-         const progress = data.progress_ms;
-    const duration = data.item.duration_ms;
-
-    document.getElementById("currentTime").textContent = formatTime(progress);
-    document.getElementById("totalTime").textContent = formatTime(duration);
-
-    const percent = (progress / duration) * 100;
-    document.getElementById("progressBar").style.width = percent + "%";
+        updatePlayerUI(data.item, data.is_playing, data.progress_ms);
+      } else {
+        fetchRecentlyPlayed(access_token);
       }
     }
 
-    // Get ?code=... from URL
+    async function fetchRecentlyPlayed(access_token) {
+      const res = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=5", {
+        headers: { Authorization: "Bearer " + access_token }
+      });
+
+      const data = await res.json();
+
+      if (data && data.items && data.items.length > 0) {
+        const lastPlayed = data.items[0].track;
+        updatePlayerUI(lastPlayed, false, 0, true);
+
+        // Show list of recently played tracks
+        const list = document.getElementById("recentList");
+        list.innerHTML = "";
+        data.items.forEach(item => {
+          const track = item.track;
+          const li = document.createElement("li");
+          li.classList.add("flex", "items-center", "space-x-3");
+
+          li.innerHTML = `
+            <img src="${track.album.images[2].url}" class="w-10 h-10 rounded" alt=""/>
+            <div>
+              <p class="text-sm font-medium">${track.name}</p>
+              <p class="text-xs text-gray-400">${track.artists.map(a => a.name).join(", ")}</p>
+            </div>
+          `;
+          list.appendChild(li);
+        });
+
+        document.getElementById("recentSection").classList.remove("hidden");
+      } else {
+        document.getElementById("loading").textContent = "No recent tracks found.";
+      }
+    }
+
+    function updatePlayerUI(item, isPlaying, progress = 0, recentlyPlayed = false) {
+      document.getElementById("loading").classList.add("hidden");
+      document.getElementById("player").classList.remove("hidden");
+
+      document.getElementById("art").src = item.album.images[0].url;
+      document.getElementById("track").textContent = item.name;
+      document.getElementById("artist").textContent = item.artists.map(a => a.name).join(", ");
+      document.getElementById("state").textContent = recentlyPlayed
+        ? "Last Played"
+        : (isPlaying ? "▶ Playing" : "⏸ Paused");
+
+      const duration = item.duration_ms;
+      document.getElementById("currentTime").textContent = formatTime(progress);
+      document.getElementById("totalTime").textContent = formatTime(duration);
+
+      const percent = (progress / duration) * 100;
+      document.getElementById("progressBar").style.width = percent + "%";
+    }
+
+    // Get the authorization code from the URL
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 
